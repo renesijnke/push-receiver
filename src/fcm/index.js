@@ -1,6 +1,7 @@
 const crypto = require('crypto');
-const request = require('request-promise');
+const axios = require('axios');
 const { escape } = require('../utils/base64');
+const url = require('url');
 
 const FCM_SUBSCRIBE = 'https://fcm.googleapis.com/fcm/connect/subscribe';
 const FCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send';
@@ -9,24 +10,25 @@ module.exports = registerFCM;
 
 async function registerFCM({ senderId, token }) {
   const keys = await createKeys();
-  const response = await request({
+  const formData = new url.URLSearchParams({
+    authorized_entity : senderId,
+    endpoint          : `${FCM_ENDPOINT}/${token}`,
+    encryption_key    : keys.publicKey
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_'),
+    encryption_auth : keys.authSecret
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_'),
+  });
+  const response = await axios({
     url     : FCM_SUBSCRIBE,
     method  : 'POST',
     headers : {
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
-    form : {
-      authorized_entity : senderId,
-      endpoint          : `${FCM_ENDPOINT}/${token}`,
-      encryption_key    : keys.publicKey
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_'),
-      encryption_auth : keys.authSecret
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_'),
-    },
+    form : formData.toString(),
   });
   return {
     keys,
