@@ -5,6 +5,7 @@ const Long = require('long');
 const { waitFor } = require('../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../utils/base64');
+const url = require('url');
 
 // Hack to fix PHONE_REGISTRATION_ERROR #17 when bundled with webpack
 // https://github.com/dcodeIO/protobuf.js#browserify-integration
@@ -39,10 +40,11 @@ async function checkIn(androidId, securityToken) {
     headers : {
       'Content-Type' : 'application/x-protobuf',
     },
-    body     : buffer,
-    encoding : null,
+    data     : buffer,
+    responseType: 'arraybuffer',
+    reponseEncoding: 'binary'
   });
-  const message = AndroidCheckinResponse.decode(body);
+  const message = AndroidCheckinResponse.decode(body.data);
   const object = AndroidCheckinResponse.toObject(message, {
     longs : String,
     enums : String,
@@ -69,6 +71,7 @@ async function doRegister({ androidId, securityToken }, appId) {
 }
 
 async function postRegister({ androidId, securityToken, body, retry = 0 }) {
+  const form = new url.URLSearchParams(body);
   const response = await request({
     url     : REGISTER_URL,
     method  : 'POST',
@@ -76,9 +79,9 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
       Authorization  : `AidLogin ${androidId}:${securityToken}`,
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
-    form : body,
+    data : form.toString(),
   });
-  if (response.includes('Error')) {
+  if (response.status >= 400) {
     console.warn(`Register request has failed with ${response}`);
     if (retry >= 5) {
       throw new Error('GCM register has failed');
@@ -87,7 +90,7 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
     await waitFor(1000);
     return postRegister({ androidId, securityToken, body, retry : retry + 1 });
   }
-  return response;
+  return response.data;
 }
 
 async function loadProtoFile() {
