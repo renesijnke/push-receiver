@@ -28,11 +28,11 @@ async function registerFCM({ senderId, token }) {
     headers : {
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
-    form : formData.toString(),
+    data : formData.toString(),
   });
   return {
     keys,
-    fcm : JSON.parse(response),
+    fcm : response.data,
   };
 }
 
