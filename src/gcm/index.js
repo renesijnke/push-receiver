@@ -71,7 +71,7 @@ async function doRegister({ androidId, securityToken }, appId) {
 }
 
 async function postRegister({ androidId, securityToken, body, retry = 0 }) {
-  const form = new url.URLSearchParams(body);
+  const form = new URLSearchParams(body);
   const response = await request({
     url     : REGISTER_URL,
     method  : 'POST',

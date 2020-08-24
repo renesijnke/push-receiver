@@ -10,7 +10,7 @@ module.exports = registerFCM;
 
 async function registerFCM({ senderId, token }) {
   const keys = await createKeys();
-  const formData = new url.URLSearchParams({
+  const formData = new URLSearchParams({
     authorized_entity : senderId,
     endpoint          : `${FCM_ENDPOINT}/${token}`,
     encryption_key    : keys.publicKey
